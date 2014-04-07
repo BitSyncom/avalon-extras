@@ -14,8 +14,8 @@ if [ "${HOST_TARGET}" == "brcm2708" ]; then
     OPENWRT_CONFIG=config.${MACHINE}.raspberry-pi
 fi
 
-
-VERSION=20140124
+DATE=`date +%Y%m%d`
+VERSION=${DATE}
 OPENWRT_PATH=./openwrt
 LUCI_PATH=./luci
 
