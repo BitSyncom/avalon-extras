@@ -285,24 +285,26 @@ static void jansson_test()
 		printf("Open FILE failed\r\n");
 		return;
 	}
-
 	write_jansson(reportlist[1], i, fp);
 	printf("Write report test success\r\n");
 	fclose(fp);
 }
 
-static void mm_corereport(AUC_HANDLE handle, uint16_t testcores, uint16_t freq[], uint16_t voltage)
+static void mm_corereport(AUC_HANDLE handle, uint16_t testcores, uint16_t freq[], uint16_t voltage, uint32_t number)
 {
 	uint32_t i;
 	FILE *fp = NULL;
+	char filename[30];
 
+	snprintf(filename, 20, "%s%02d%s", "/tmp/", number, "coretest.log");
+	printf("%s/r/n", filename);
 	memset(reportlist, 0, sizeof(struct mmreport) * AVA4_DEFAULT_MODULARS);
 
 	mm_detect(handle);
 	mm_test(handle, testcores, freq, voltage);
 
 	/* Write reportlist to file */
-	fp = fopen("/tmp/coretest.log", "wt");
+	fp = fopen(filename, "wt");
 	if(fp == NULL) {
 		printf("Open FILE failed\r\n");
 		return;
@@ -333,7 +335,7 @@ void mm_coretest(uint16_t testcores, uint16_t freq[], uint16_t voltage)
 			g_auc_id = i;
 			auc_init(hauc, I2C_CLK_1M, 9600);
 			printf("auc-%d, ver:%s\n", i, auc_version(i));
-			mm_corereport(hauc, testcores, freq, voltage);
+			mm_corereport(hauc, testcores, freq, voltage, i);
 			auc_close(hauc);
 			hauc = NULL;
 		}
