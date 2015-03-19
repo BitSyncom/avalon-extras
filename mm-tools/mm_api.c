@@ -373,8 +373,7 @@ void set_radiator_mode()
 		sleep(2);
 	}
 
-	for (i = 0; i < auc_cnts; i++) {
+	for (i = 0; i < auc_cnts; i++)
 		auc_close(hauc[i]);
-	}
 }
 
