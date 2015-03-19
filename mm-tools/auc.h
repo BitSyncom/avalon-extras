@@ -39,6 +39,13 @@
 #define AUC_DEVCNT	100
 #define AUC_TIMEOUT_MS	200
 
+#define bswap_16(value)  \
+        ((((value) & 0xff) << 8) | ((value) >> 8))
+
+#define bswap_32(value) \
+        (((uint32_t)bswap_16((uint16_t)((value) & 0xffff)) << 16) | \
+        (uint32_t)bswap_16((uint16_t)((value) >> 16)))
+
 struct cdc_i2c_header {
 	uint8_t length;					/*!< Length of the packet (include header and body) */
 	uint8_t reserved[2];				/*!< Reserved */
