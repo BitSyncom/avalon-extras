@@ -79,7 +79,7 @@ fi
 if [ "$1" == "--clone" ]; then
     [ ! -d avalon ] && mkdir -p avalon/bin
     cd avalon
-    git clone git://git.openwrt.org/10.05/openwrt.git
+    git clone git://git.openwrt.org/15.05/openwrt.git
     git clone git://github.com/Canaan-Creative/cgminer.git
     git clone git://github.com/Canaan-Creative/cgminer-openwrt-packages.git
     git clone git://github.com/Canaan-Creative/luci.git
