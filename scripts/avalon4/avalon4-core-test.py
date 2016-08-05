@@ -365,6 +365,57 @@ errcode = [
         '\x1b[1;31mADC1ERR\x1b[0m',
         '\x1b[1;31mVOLTERR\x1b[0m'
         ]
+def run_testa7(usbdev, endpin, endpout, cmd):
+        auc_req(usbdev, endpin, endpout, "00", "a3", cmd)
+        while True:
+                auc_req(usbdev, endpin, endpout,
+                        "00",
+                        "a4",
+                        cmd)
+                res_s = auc_read(usbdev, endpin)
+                if res_s is not None:
+                        break
+
+        if not res_s:
+                print(str(count) + ": Something is wrong or modular id not correct")
+        else:
+                result = binascii.hexlify(res_s)
+                for i in range(0, 4):
+                    sys.stdout.write("M-" + str(i) + ': ')
+                    c = result[(12 + i * 6) : (12 + i * 6) + 6]
+                    n = int(c, 16)
+                    r = ''
+                    cnt = 0;
+                    for j in range(18, 0, -8):
+                        if j == 18:
+                            for cnt in range(1, -1, -1):
+                                if ((n >> cnt) & 1) == 0:
+                                    r = '\x1b[1;31mxx\x1b[0m {}'.format(r)
+                                else:
+                                    r = '\x1b[1;32m{:02d}\x1b[0m {}'.format(j + cnt - 1 , r)
+                        else:
+                            for cnt in range(7, -1, -1):
+                                if ((n >> cnt) & 1) == 0:
+                                    r = '\x1b[1;31mxx\x1b[0m {}'.format(r)
+                                else:
+                                    r = '\x1b[1;32m{:02d}\x1b[0m {}'.format(j + cnt - 1 , r)
+                        n >>= 8
+                    print(r)
+
+                passcore = int(result[36: 40], 16)
+                allcore = int(result[40: 44], 16)
+                ec = int(result[44:52], 16)
+
+                display = 'bad(' + str(allcore - passcore) + '), '
+                display = display + 'all(' + str(allcore) + '), '
+                errstr = ''
+                for i in range(0, len(errcode)):
+                    if ((ec >> i) & 1):
+                        errstr += errcode[i] + ' '
+
+                display = display + 'Status ( ' + errstr + ')'
+                print('Result:' + display)
+
 
 def run_testa6(usbdev, endpin, endpout, cmd):
         auc_req(usbdev, endpin, endpout, "00", "a3", cmd)
@@ -537,11 +588,12 @@ def run_modular_test(usbdev, endpin, endpout):
             txdata += g_freq_table[freqdata[0]]
             txdata += g_freq_table[freqdata[1]]
             txdata += g_freq_table[freqdata[2]]
-
+        if (hw == '70'):
+            run_testa7(usbdev, endpin, endpout, mm_package(TYPE_TEST, module_id=options.module_id, pdata=txdata))
         if (hw == '60'):
             run_testa6(usbdev, endpin, endpout, mm_package(TYPE_TEST, module_id=options.module_id, pdata=txdata))
-        else:
-            run_test(usbdev, endpin, endpout, mm_package(TYPE_TEST, module_id=options.module_id, pdata=txdata))
+      #  else:
+       #     run_test(usbdev, endpin, endpout, mm_package(TYPE_TEST, module_id=options.module_id, pdata=txdata))
         if (hw == '40') or (hw == '41') or (hw == '50'):
             run_require(usbdev, endpin, endpout, mm_package(TYPE_REQUIRE, module_id=options.module_id))
         raw_input('Press enter to continue:')
