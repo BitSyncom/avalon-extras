@@ -35,13 +35,16 @@ import sys
 
 parser = OptionParser(version="%prog ver:20160808_1649")
 # TODO: Add test core count
-parser.add_option("-C", "--core", dest="test_cores", default="4", help="Test cores")
-parser.add_option("-F", "--freq", dest="freq", default="200", help="Asic freq, default:200")
+parser.add_option("-C", "--core", dest="test_cores",
+                  default="4", help="Test cores")
+parser.add_option("-F", "--freq", dest="freq", default="200",
+                  help="Asic freq, default:200")
 (options, args) = parser.parse_args()
 parser.print_version()
 
 auc_vid = 0x29f1
 auc_pid = 0x33f2
+
 
 def CRC16(message):
     # CRC-16-CITT poly, the CRC sheme used by ymodem protocol
@@ -63,11 +66,12 @@ def CRC16(message):
             mask >>= 1
             # if a one popped out the left of the reg, xor reg w/poly
             if reg > 0xffff:
-            # eliminate any one that popped out the left
+                # eliminate any one that popped out the left
                 reg &= 0xffff
             # xor with the poly, this is the remainder
                 reg ^= poly
     return reg
+
 
 def enum_usbdev(vendor_id, product_id):
     # Find device
@@ -92,6 +96,8 @@ def enum_usbdev(vendor_id, product_id):
 # addr : iic slaveaddr
 # req : see bridge format
 # data: 40 bytes payload
+
+
 def auc_req(usbdev, endpin, endpout, addr, req, data):
     req = req.rjust(2, '0')
 
@@ -105,37 +111,43 @@ def auc_req(usbdev, endpin, endpout, addr, req, data):
     if req == 'a3':
         datalen = 8 + (len(data) / 2)
         data = data.ljust(112, '0')
-        txdat = hex(datalen)[2:].rjust(2, '0') + "0000" + "a5" + "280000" + addr.rjust(2, '0') + data
+        txdat = hex(datalen)[2:].rjust(2, '0') + "0000" + \
+            "a5" + "280000" + addr.rjust(2, '0') + data
         usbdev.write(endpout, txdat.decode("hex"))
         usbdev.read(endpin, 64)
 
     # FIXME: a4 not work
     if req == 'a4':
         datalen = 8
-        txdat = hex(datalen)[2:].rjust(2, '0') + "0000" + "a5" + "002800" + addr.rjust(2, '0') + "0".ljust(112, '0')
+        txdat = hex(datalen)[2:].rjust(2, '0') + "0000" + "a5" + \
+            "002800" + addr.rjust(2, '0') + "0".ljust(112, '0')
         usbdev.write(endpout, txdat.decode("hex"))
 
     if req == 'a5':
         if options.fast_xfer == '1':
             datalen = 8 + (len(data) / 2)
             data = data.ljust(112, '0')
-            txdat = hex(datalen)[2:].rjust(2, '0') + "0000" + "a5" + "282800" + addr.rjust(2, '0') + data
+            txdat = hex(datalen)[2:].rjust(2, '0') + "0000" + \
+                "a5" + "282800" + addr.rjust(2, '0') + data
             usbdev.write(endpout, txdat.decode("hex"))
         else:
             datalen = 8 + (len(data) / 2)
             data = data.ljust(112, '0')
-            txdat = hex(datalen)[2:].rjust(2, '0') + "0000" + "a5" + "280000" + addr.rjust(2, '0') + data
+            txdat = hex(datalen)[2:].rjust(2, '0') + "0000" + \
+                "a5" + "280000" + addr.rjust(2, '0') + data
             usbdev.write(endpout, txdat.decode("hex"))
             usbdev.read(endpin, 64)
 
             datalen = 8
-            txdat = hex(datalen)[2:].rjust(2, '0') + "0000" + "a5" + "002800" + addr.rjust(2, '0') + "0".ljust(112, '0')
+            txdat = hex(datalen)[2:].rjust(
+                2, '0') + "0000" + "a5" + "002800" + addr.rjust(2, '0') + "0".ljust(112, '0')
             usbdev.write(endpout, txdat.decode("hex"))
 
     if req == 'a6':
         datalen = 4
         txdat = hex(datalen)[2:].rjust(2, '0') + "0000" + req
         usbdev.write(endpout, txdat.decode("hex"))
+
 
 def auc_read(usbdev, endpin):
     ret = usbdev.read(endpin, 64)
@@ -144,11 +156,13 @@ def auc_read(usbdev, endpin):
     else:
         return None
 
+
 def auc_xfer(usbdev, endpin, endpout, addr, req, data):
     auc_req(usbdev, endpin, endpout, addr, req, data)
     return auc_read(usbdev, endpin)
 
 TYPE_TEST = "32"
+
 
 def mm_package(cmd_type, idx="01", cnt="01", module_id=None, pdata='0'):
     if module_id is None:
@@ -178,59 +192,62 @@ errcode = [
         '\x1b[1;31mVOLTERR\x1b[0m'
         ]
 
+
 def run_testa7(usbdev, endpin, endpout, cmd):
     while True:
         auc_req(usbdev, endpin, endpout, "00", "a3", cmd)
         while True:
-                auc_req(usbdev, endpin, endpout,
-                        "00",
-                        "a4",
-                        cmd)
-                res_s = auc_read(usbdev, endpin)
-                if res_s is not None:
-                        break
+            auc_req(usbdev, endpin, endpout,
+                    "00",
+                    "a4",
+                    cmd)
+            res_s = auc_read(usbdev, endpin)
+            if res_s is not None:
+                break
 
         if not res_s:
-                print("Something is wrong or modular id not correct")
+            print("Something is wrong or modular id not correct")
         else:
-                result = binascii.hexlify(res_s)
-                for i in range(0, 4):
-                    sys.stdout.write("M-" + str(i) + ': ')
-                    c = result[(12 + i * 4) : (12 + i * 4) + 4]
-                    n = int(c, 16)
-                    r = ''
-                    cnt = 0;
-                    for j in range(14, 0, -8):
-                        if j == 14:
-                            for cnt in range(5, -1, -1):
-                                if ((n >> cnt) & 1) == 0:
-                                    r = '\x1b[1;31mxx\x1b[0m {}'.format(r)
-                                else:
-                                    r = '\x1b[1;32m{:02d}\x1b[0m {}'.format(j + cnt - 5 , r)
-                        else:
-                            for cnt in range(7, -1, -1):
-                                if ((n >> cnt) & 1) == 0:
-                                    r = '\x1b[1;31mxx\x1b[0m {}'.format(r)
-                                else:
-                                    r = '\x1b[1;32m{:02d}\x1b[0m {}'.format(j + cnt - 5 , r)
+            result = binascii.hexlify(res_s)
+            for i in range(0, 4):
+                sys.stdout.write("M-" + str(i) + ': ')
+                c = result[(12 + i * 4): (12 + i * 4) + 4]
+                n = int(c, 16)
+                r = ''
+                cnt = 0
+                for j in range(14, 0, -8):
+                    if j == 14:
+                        for cnt in range(5, -1, -1):
+                            if ((n >> cnt) & 1) == 0:
+                                r = '\x1b[1;31mxx\x1b[0m {}'.format(r)
+                            else:
+                                r = '\x1b[1;32m{:02d}\x1b[0m {}'.format(
+                                    j + cnt - 5, r)
+                    else:
+                        for cnt in range(7, -1, -1):
+                            if ((n >> cnt) & 1) == 0:
+                                r = '\x1b[1;31mxx\x1b[0m {}'.format(r)
+                            else:
+                                r = '\x1b[1;32m{:02d}\x1b[0m {}'.format(
+                                    j + cnt - 5, r)
 
-                        n >>= 8
-                    print(r)
+                    n >>= 8
+                print(r)
 
-                passcore = int(result[28: 32], 16)
-                allcore = int(result[32: 36], 16)
-                ec = int(result[36:44], 16)
+            passcore = int(result[28: 32], 16)
+            allcore = int(result[32: 36], 16)
+            ec = int(result[36:44], 16)
 
-                display = 'bad(' + str(allcore - passcore) + '), '
-                display = display + 'all(' + str(allcore) + '), '
-                errstr = ''
-                for i in range(0, len(errcode)):
-                    if ((ec >> i) & 1):
-                        errstr += errcode[i] + ' '
+            display = 'bad(' + str(allcore - passcore) + '), '
+            display = display + 'all(' + str(allcore) + '), '
+            errstr = ''
+            for i in range(0, len(errcode)):
+                if ((ec >> i) & 1):
+                    errstr += errcode[i] + ' '
 
-                display = display + 'Status ( ' + errstr + ')'
-                print('Result:' + display)
-                raw_input("Please enter any key to continue")
+            display = display + 'Status ( ' + errstr + ')'
+            print('Result:' + display)
+            raw_input("Please enter any key to continue")
 
 if __name__ == '__main__':
     # Detect AUC
@@ -267,7 +284,8 @@ if __name__ == '__main__':
     txdata = tmp.rjust(8, '0')
     tmp = tmp.rjust(8, '0')
     txdata += tmp
-    tmp = hex(int(freqdata[0], 10) | (int(freqdata[1], 10) << 10) | (int(freqdata[2], 10) << 20))[2:]
+    tmp = hex(int(freqdata[0], 10) | (int(freqdata[1], 10) << 10) | (
+        int(freqdata[2], 10) << 20))[2:]
     tmp = tmp.rjust(8, '0')
     txdata += tmp
     run_testa7(usbdev, endpin, endpout, mm_package(TYPE_TEST, pdata=txdata))
