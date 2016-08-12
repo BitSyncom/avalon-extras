@@ -209,34 +209,48 @@ def run_testa7(usbdev, endpin, endpout, cmd):
             print("Something is wrong or modular id not correct")
         else:
             result = binascii.hexlify(res_s)
-            for i in range(0, 4):
+            nhu = result[10: 12]
+            i = result(8: 10)
+            n = result(16: 20)
                 sys.stdout.write("M-" + str(i) + ': ')
-                c = result[(12 + i * 4): (12 + i * 4) + 4]
+                if n % 8 == 0:
+                    c = result[40: (n % 8) * 2]
+                else:
+                    c = result[40: (n % 8 + 1) * 2]
                 n = int(c, 16)
                 r = ''
                 cnt = 0
-                for j in range(14, 0, -8):
-                    if j == 14:
-                        for cnt in range(5, -1, -1):
-                            if ((n >> cnt) & 1) == 0:
-                                r = '\x1b[1;31mxx\x1b[0m {}'.format(r)
-                            else:
-                                r = '\x1b[1;32m{:02d}\x1b[0m {}'.format(
-                                    j + cnt - 5, r)
-                    else:
+                if n % 8 != 0:
+                    for j in range(n, 0, -8):
+                        if j == n:
+                            for cnt in range(n % 8 - 1, -1, -1):
+                                if ((n >> cnt) & 1) == 0:
+                                    r = '\x1b[1;31mxx\x1b[0m {}'.format(r)
+                                else:
+                                    r = '\x1b[1;32m{:02d}\x1b[0m {}'.format(
+                                        j + cnt - n % 8 - 1, r)
+                        else:
+                            for cnt in range(7, -1, -1):
+                                if ((n >> cnt) & 1) == 0:
+                                    r = '\x1b[1;31mxx\x1b[0m {}'.format(r)
+                                else:
+                                    r = '\x1b[1;32m{:02d}\x1b[0m {}'.format(
+                                        j + cnt - n % 8 - 1, r)
+                else:
+                    for j in range(n):
                         for cnt in range(7, -1, -1):
                             if ((n >> cnt) & 1) == 0:
                                 r = '\x1b[1;31mxx\x1b[0m {}'.format(r)
                             else:
                                 r = '\x1b[1;32m{:02d}\x1b[0m {}'.format(
-                                    j + cnt - 5, r)
+                                    j + cnt - n - 9, r)
 
                     n >>= 8
                 print(r)
 
-            passcore = int(result[28: 32], 16)
-            allcore = int(result[32: 36], 16)
-            ec = int(result[36:44], 16)
+            passcore = int(result[12: 16], 16)
+            allcore = int(result[16: 20], 16) * nhu
+            ec = int(result[24:32], 16)
 
             display = 'bad(' + str(allcore - passcore) + '), '
             display = display + 'all(' + str(allcore) + '), '
