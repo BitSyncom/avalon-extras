@@ -210,40 +210,42 @@ def run_testa7(usbdev, endpin, endpout, cmd):
         else:
             result = binascii.hexlify(res_s)
             nhu = result[10: 12]
-            i = result(8: 10)
-            n = result(16: 20)
-                sys.stdout.write("M-" + str(i) + ': ')
-                if n % 8 == 0:
-                    c = result[40: (n % 8) * 2]
-                else:
-                    c = result[40: (n % 8 + 1) * 2]
+            i = result[8: 10]
+            ii = int(i, 16)
+            ncore = result[16: 20]
+            sys.stdout.write("M-" + str(ii) + ': ')
+            if ncore % 8 == '0':
+                c = result[40: (ncore % 8) * 2 + 40]
                 n = int(c, 16)
                 r = ''
                 cnt = 0
-                if n % 8 != 0:
-                    for j in range(n, 0, -8):
-                        if j == n:
-                            for cnt in range(n % 8 - 1, -1, -1):
-                                if ((n >> cnt) & 1) == 0:
-                                    r = '\x1b[1;31mxx\x1b[0m {}'.format(r)
-                                else:
-                                    r = '\x1b[1;32m{:02d}\x1b[0m {}'.format(
-                                        j + cnt - n % 8 - 1, r)
+                for j in range(ncore):
+                    for cnt in range(7, -1, -1):
+                        if ((n >> cnt) & 1) == '0':
+                            r = '\x1b[1;31mxx\x1b[0m {}'.format(r)
                         else:
-                            for cnt in range(7, -1, -1):
-                                if ((n >> cnt) & 1) == 0:
-                                    r = '\x1b[1;31mxx\x1b[0m {}'.format(r)
-                                else:
-                                    r = '\x1b[1;32m{:02d}\x1b[0m {}'.format(
-                                        j + cnt - n % 8 - 1, r)
-                else:
-                    for j in range(n):
-                        for cnt in range(7, -1, -1):
-                            if ((n >> cnt) & 1) == 0:
+                            r = '\x1b[1;32m{:02d}\x1b[0m {}'.format(
+                                j + cnt - 7, r)
+            else:
+                c = result[40: (ncore % 8 + 1) * 2 + 40]
+                n = int(c, 16)
+                r = ''
+                cnt = 0
+                for j in range(ncore, 0, -8):
+                    if j == ncore:
+                        for cnt in range(ncore % 8 - 1, -1, -1):
+                            if ((n >> cnt) & 1) == '0':
                                 r = '\x1b[1;31mxx\x1b[0m {}'.format(r)
                             else:
                                 r = '\x1b[1;32m{:02d}\x1b[0m {}'.format(
-                                    j + cnt - n - 9, r)
+                                    j + cnt - ncore % 8 - 1, r)
+                    else:
+                        for cnt in range(7, -1, -1):
+                            if ((n >> cnt) & 1) == '0':
+                                r = '\x1b[1;31mxx\x1b[0m {}'.format(r)
+                            else:
+                                r = '\x1b[1;32m{:02d}\x1b[0m {}'.format(
+                                    j + cnt - ncore % 8 - 1, r)
 
                     n >>= 8
                 print(r)
