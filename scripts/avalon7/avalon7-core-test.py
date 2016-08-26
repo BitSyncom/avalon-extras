@@ -164,7 +164,7 @@ def auc_xfer(usbdev, endpin, endpout, addr, req, data):
 TYPE_TEST = "32"
 
 
-def mm_package(cmd_type, idx="01", cnt="01", module_id=None, pdata='0'):
+def mm_package(cmd_type, idx='1', cnt="01", module_id=None, pdata='0'):
     if module_id is None:
         data = pdata.ljust(64, '0')
     else:
@@ -175,27 +175,29 @@ def mm_package(cmd_type, idx="01", cnt="01", module_id=None, pdata='0'):
 
 errcode = [
         'IDLE',
-        '\x1b[1;31mTOOHOT\x1b[0m',
-        '\x1b[1;31mLOOP0FAILED\x1b[0m',
-        '\x1b[1;31mLOOP1FAILED\x1b[0m',
-        '\x1b[1;31mINVALIDMCU\x1b[0m',
-        'NOSTRATUM',
-        'RBOVERFLOW',
-        'MMCRCFAILED',
-        'MCUCRCFAILED',
+        '\x1b[1;31mMMCRCFALIED\x1b[0m',
         '\x1b[1;31mNOFAN\x1b[0m',
-        '\x1b[1;31mPG0FAILED\x1b[0m',
-        '\x1b[1;31mPG1FAILED\x1b[0m',
+        '\x1b[1;31mLOCK\x1b[0m',
+        '\x1b[1;31mAPIFIF00VERFLOW\x1b[0m',
+        'RBOVERFLOW',
+        'TOOHOT',
+        '\x1b[1;31mHOTBEFORE\x1b[0m',
+        '\x1b[1;31mLOOPFAILD\x1b[0m',
         '\x1b[1;31mCORETESTFAILED\x1b[0m',
-        '\x1b[1;31mADC0ERR\x1b[0m',
-        '\x1b[1;31mADC1ERR\x1b[0m',
-        '\x1b[1;31mVOLTERR\x1b[0m'
+        '\x1b[1;31mINVALIDMCU\x1b[0m',
+        '\x1b[1;31mPGFAILD\x1b[0m',
+        '\x1b[1;31mNTC_ERR\x1b[0m',
+        '\x1b[1;31mVOL_ERR\x1b[0m',
+        '\x1b[1;31mVCORE_ERR\x1b[0m'
         ]
 
 
 def run_testa7(usbdev, endpin, endpout, cmd):
+    count = 0
+    passcore = 0
     while True:
         auc_req(usbdev, endpin, endpout, "00", "a3", cmd)
+
         while True:
             auc_req(usbdev, endpin, endpout,
                     "00",
@@ -209,61 +211,65 @@ def run_testa7(usbdev, endpin, endpout, cmd):
             print("Something is wrong or modular id not correct")
         else:
             result = binascii.hexlify(res_s)
-            nhu = result[10: 12]
-            i = result[8: 10]
-            ii = int(i, 16)
-            ncore = result[16: 20]
-            sys.stdout.write("M-" + str(ii) + ': ')
-            if ncore % 8 == '0':
-                c = result[40: (ncore % 8) * 2 + 40]
+            print result
+            count = count + 1
+            nhu = int(result[10: 12], 16)
+            ncore = int(result[16: 20], 16)
+            num_hu = int(result[8: 10], 16)
+            passcore = int(result[12: 16], 16) + passcore
+            sys.stdout.write("M-" + str(num_hu) + ': ')
+            if (ncore % 8) == 0:
+                c = result[40: (ncore / 8) * 2 + 40]
                 n = int(c, 16)
                 r = ''
                 cnt = 0
-                for j in range(ncore):
+                for j in range(ncore, 0, -8):
                     for cnt in range(7, -1, -1):
-                        if ((n >> cnt) & 1) == '0':
+                        if ((n >> cnt) & 1) == 0:
                             r = '\x1b[1;31mxx\x1b[0m {}'.format(r)
                         else:
                             r = '\x1b[1;32m{:02d}\x1b[0m {}'.format(
                                 j + cnt - 7, r)
+
+                    n >>= 8
+                print(r)
             else:
-                c = result[40: (ncore % 8 + 1) * 2 + 40]
+                c = result[40: (ncore / 8 + 1) * 2 + 40]
                 n = int(c, 16)
                 r = ''
                 cnt = 0
                 for j in range(ncore, 0, -8):
                     if j == ncore:
-                        for cnt in range(ncore % 8 - 1, -1, -1):
-                            if ((n >> cnt) & 1) == '0':
+                        for cnt in range(ncore - ncore / 8 * 8 - 1, -1, -1):
+                            if ((n >> cnt) & 1) == 0:
                                 r = '\x1b[1;31mxx\x1b[0m {}'.format(r)
                             else:
                                 r = '\x1b[1;32m{:02d}\x1b[0m {}'.format(
-                                    j + cnt - ncore % 8 - 1, r)
+                                    j + cnt - ncore / 8 * 8 - 1, r)
                     else:
                         for cnt in range(7, -1, -1):
-                            if ((n >> cnt) & 1) == '0':
+                            if ((n >> cnt) & 1) == 0:
                                 r = '\x1b[1;31mxx\x1b[0m {}'.format(r)
                             else:
                                 r = '\x1b[1;32m{:02d}\x1b[0m {}'.format(
-                                    j + cnt - ncore % 8 - 1, r)
+                                    j + cnt - ncore / 8 * 8 - 1, r)
 
                     n >>= 8
                 print(r)
+        if count == nhu:
+            break
+    allcore = int(result[16: 20], 16) * nhu
+    ec = int(result[24:32], 16)
+    display = 'bad(' + str(int(allcore) - passcore) + '), '
+    display = display + 'all(' + str(allcore) + '), '
+    errstr = ''
+    for i in range(0, len(errcode)):
+        if ((ec >> i) & 1):
+            errstr += errcode[i] + ' '
 
-            passcore = int(result[12: 16], 16)
-            allcore = int(result[16: 20], 16) * nhu
-            ec = int(result[24:32], 16)
-
-            display = 'bad(' + str(allcore - passcore) + '), '
-            display = display + 'all(' + str(allcore) + '), '
-            errstr = ''
-            for i in range(0, len(errcode)):
-                if ((ec >> i) & 1):
-                    errstr += errcode[i] + ' '
-
-            display = display + 'Status ( ' + errstr + ')'
-            print('Result:' + display)
-            raw_input("Please enter any key to continue")
+    display = display + 'Status ( ' + errstr + ')'
+    print('Result:' + display)
+    raw_input("Please enter any key to continue")
 
 if __name__ == '__main__':
     # Detect AUC
