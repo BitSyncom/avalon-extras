@@ -164,13 +164,14 @@ def auc_xfer(usbdev, endpin, endpout, addr, req, data):
 TYPE_TEST = "32"
 
 
-def mm_package(cmd_type, idx='1', cnt="01", module_id=None, pdata='0'):
+def mm_package(cmd_type, idx="00", cnt="01", module_id=None, pdata='0'):
     if module_id is None:
         data = pdata.ljust(64, '0')
     else:
         data = pdata.ljust(60, '0') + module_id.rjust(4, '0')
 
     crc = CRC16(data.decode("hex"))
+    idx += 1
     return "434e" + cmd_type + "00" + idx + cnt + data + hex(crc)[2:].rjust(4, '0')
 
 errcode = [
