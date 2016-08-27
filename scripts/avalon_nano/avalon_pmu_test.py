@@ -76,7 +76,6 @@ h: help\n\
           1010: green led blink\n\
           2020: red   led blink\n\
 4: get    the pmu state\n\
-5: test	  the process of power on\n\
 q: quit\n")
 
 def judge_vol_range(vol):
@@ -128,7 +127,7 @@ def get_pmu_state():
 	input_str = mm_package("30", module_id = None);
 	ser.flushInput()
 	ser.write(input_str.decode('hex'))
-
+        time.sleep(1);
 	res=ser.readall()
 	print("NTC1:   " + '%d' %int(binascii.hexlify(res[6:8]), 16))
 	print("NTC2:   " + '%d' %int(binascii.hexlify(res[8:10]), 16))
@@ -198,41 +197,9 @@ def get_pmu_state_vol():
 	a = int(binascii.hexlify(res[18:20]), 16)
 	print("VBASE:  " + '%.2f' %a)
 
-# TODO : finish this test_init_process fuction
-def test_init_process():
-	print("Please Waiting, PMU Init Process Is Testing\n")
-	input_str = mm_package("32", module_id = None, pdata = '0103ff')
-	ser.flushInput()
-	ser.write(input_str.decode('hex'))
-	input_str = mm_package("30", module_id = None, pdata = '0')
-	ser.flushInput()
-	ser.write(input_str.decode('hex'))
-	res=ser.readall()
-	a1 = int(binascii.hexlify(res[10:12]), 16)/1024.0 * 3.3 * 11
-	a2 = int(binascii.hexlify(res[12:14]), 16)/1024.0 * 3.3 * 11
-	c1 = int(binascii.hexlify(res[14:16]), 16)/1024.0 * 3.3 * 11
-	c2 = int(binascii.hexlify(res[16:18]), 16)/1024.0 * 3.3 * 11
-	cz = ''
-	if (abs(a2 - 12) > 1):
-		cz += '1'
-	else:
-		cz += '0'
-	if (abs(a1 - 12) > 1):
-		cz += '1'
-	else:
-		cz += '0'
-	input_str = mm_package("32", module_id = None, pdata = "04" + "03" + cz)
-	ser.flushInput()
-	ser.write(input_str.decode('hex'))
-	input_str = mm_package("32", module_id = None, pdata = "0203")
-	ser.flushInput()
-	ser.write(input_str.decode('hex'))
-	print("V12-1:  " + '%.2f' %a1)
-	print("V12-2:  " + '%.2f' %a2)
-
 def test_polling():
 	while (1):
-		h = raw_input("Please input(1-5), h for help:")
+		h = raw_input("Please input(1-4), h for help:")
 		if ((h == 'h') or (h == 'H')):
 			show_help()
 		elif ((h == 'q') or (h == 'Q')):
@@ -247,8 +214,6 @@ def test_polling():
 			set_led_state(led)
 		elif (h == '4'):
                         get_pmu_state();
-		elif (h == '5'):
-			test_init_process()
 		else:
 			show_help()
 
@@ -258,9 +223,9 @@ if __name__ == '__main__':
 			detect_version()
 			set_voltage("88AA")
 			get_pmu_state()
+                        time.sleep(1)
 		elif (options.is_rig == '0'):
 			test_polling()
 		elif (options.is_rig == '2'):
 			get_pmu_state_vol()
                         time.sleep(1)
-#		raw_input('Press Enter to continue')
