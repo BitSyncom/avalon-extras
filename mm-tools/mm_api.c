@@ -18,11 +18,22 @@
 /* packet type */
 #define AVA4_P_DETECT	0x10
 #define AVA4_P_FINISH	0x21
+#define AVA4_P_POLLING  0x30
 #define AVA4_P_REQUIRE	0x31
 #define AVA4_P_TEST	0x32
 #define AVA4_P_ACKDETECT	0x40
 
+#define AVA4_P_STATUS	0x41
 #define AVA4_MODULE_BROADCAST	0
+
+#define AVA4_PWM_MAX            0x3FF
+
+#define get_fan_pwm(v)  (AVA4_PWM_MAX - (v) * AVA4_PWM_MAX / 100)
+
+uint32_t opt_avalon4_temp_target = 42;
+uint32_t opt_avalon4_overheat = 65;
+uint32_t opt_avalon4_fan_min = 5;
+uint32_t opt_avalon4_fan_max = 85;
 
 struct avalon4_pkg {
 	uint8_t head[2];
@@ -161,7 +172,8 @@ static void mm_test(AUC_HANDLE handle, uint16_t testcores, uint16_t freq[], uint
 			miner_index = 0;
 			avalon4_pkg_init(&sendpkg, AVA4_P_TEST, 1, 1);
 			avalon4_pkg_send(handle, &sendpkg, i);
-			while (1) {
+			while (1) {	
+				printf("fuyefuye\r\n");
 				if (avalon4_pkg_receive(handle, &recvpkg, i)) {
 					/* TODO: miner_index[1], result[4] * 4 */
 					hexdump(recvpkg.data, AVA4_P_DATA_LEN);
@@ -285,24 +297,26 @@ static void jansson_test()
 		printf("Open FILE failed\r\n");
 		return;
 	}
-
 	write_jansson(reportlist[1], i, fp);
 	printf("Write report test success\r\n");
 	fclose(fp);
 }
 
-static void mm_corereport(AUC_HANDLE handle, uint16_t testcores, uint16_t freq[], uint16_t voltage)
+static void mm_corereport(AUC_HANDLE handle, uint16_t testcores, uint16_t freq[], uint16_t voltage, uint32_t number)
 {
 	uint32_t i;
 	FILE *fp = NULL;
+	char filename[30];
 
+	snprintf(filename, 20, "%s%02d%s", "/tmp/", number, "coretest.log");
+	printf("%s/r/n", filename);
 	memset(reportlist, 0, sizeof(struct mmreport) * AVA4_DEFAULT_MODULARS);
 
 	mm_detect(handle);
 	mm_test(handle, testcores, freq, voltage);
 
 	/* Write reportlist to file */
-	fp = fopen("/tmp/coretest.log", "wt");
+	fp = fopen(filename, "wt");
 	if(fp == NULL) {
 		printf("Open FILE failed\r\n");
 		return;
@@ -322,7 +336,7 @@ void mm_coretest(uint16_t testcores, uint16_t freq[], uint16_t voltage)
 	uint32_t auc_cnts;
 	uint32_t i;
 
-	jansson_test();
+	//jansson_test();
 	auc_cnts = auc_getcounts();
 	if (!auc_cnts)
 		printf("No AUC found!\n");
@@ -333,19 +347,76 @@ void mm_coretest(uint16_t testcores, uint16_t freq[], uint16_t voltage)
 			g_auc_id = i;
 			auc_init(hauc, I2C_CLK_1M, 9600);
 			printf("auc-%d, ver:%s\n", i, auc_version(i));
-			mm_corereport(hauc, testcores, freq, voltage);
+			mm_corereport(hauc, testcores, freq, voltage, i);
 			auc_close(hauc);
 			hauc = NULL;
 		}
 	}
 }
 
-void set_radiator_mode()
+void adjust_fan(uint32_t temperature, AUC_HANDLE handle, struct avalon4_pkg *mmpkg, uint8_t module_id)
+{
+        uint32_t temp = 0, fan = 0, fan_pwm = 45, tmp;
+        while(1) {
+		printf("fuye\r\n");
+		avalon4_pkg_init(mmpkg, AVA4_P_POLLING, 1, 1);
+        	memset(mmpkg->data, 0, AVA4_P_DATA_LEN);
+		avalon4_pkg_send(handle, mmpkg, module_id);
+
+		usleep(1000 * 200);
+                avalon4_pkg_receive(handle, mmpkg, module_id);
+                switch (mmpkg->type) {
+                        case AVA4_P_STATUS:
+				hexdump(mmpkg->data, AVA4_P_DATA_LEN);
+                                memcpy(&tmp, mmpkg->data, 4);
+                                temp = bswap_32(tmp);
+                                memcpy(&tmp, mmpkg->data + 4, 4);
+                                fan_pwm = bswap_32(tmp);
+				printf("temp:%d, fan:%x\r\n", temp, fan_pwm);
+                                break;
+                        default:
+                                break;
+                }
+                if(temp)
+                        break;
+        }
+	
+	fan = (AVA4_PWM_MAX -fan_pwm) * 100 / AVA4_PWM_MAX;
+	printf("fan:%x\r\n", fan);
+
+	if (temp < temperature - 10)
+		fan = opt_avalon4_fan_min;
+	else if (temp > temperature + 10 || temp > opt_avalon4_overheat - 3)
+		fan = opt_avalon4_fan_max;
+	else if (temp > temperature + 1)
+		fan += 2;
+	else if (temp < temperature - 1)
+		fan -= 2;
+
+	printf("fan:%x\r\n", fan);
+	if (fan < opt_avalon4_fan_min)
+		fan = opt_avalon4_fan_min;
+	if (fan > opt_avalon4_fan_max)
+		fan = opt_avalon4_fan_max;
+
+	avalon4_pkg_init(mmpkg, AVA4_P_POLLING, 1, 1);
+        memset(mmpkg->data, 0, AVA4_P_DATA_LEN);
+
+	fan_pwm = get_fan_pwm(fan);
+	printf("fan_pwm:%08x\r\n", fan_pwm);
+	fan_pwm |= 0x80000000;
+	tmp = bswap_32(fan_pwm);
+	printf("fan_pwm:%08x\r\n", tmp);
+	memcpy(mmpkg->data + 4, &tmp, 4);
+	avalon4_pkg_send(handle, mmpkg, module_id);
+}
+
+void set_radiator_mode(uint32_t temperature)
 {
 	AUC_HANDLE hauc[AUC_DEVCNT];
 	uint32_t auc_cnts;
-	uint32_t i;
-	struct avalon4_pkg sendpkg;
+	uint32_t i, j, k;
+	struct avalon4_pkg sendpkg, revpkg;
 
 	memset(hauc, 0, AUC_DEVCNT);
 	auc_cnts = auc_getcounts();
@@ -362,12 +433,20 @@ void set_radiator_mode()
 			printf("auc-%d, ver:%s\n", i, auc_version(i));
 		}
 	}
+	/* assign address */
 
 	while(1) {
 		for (i = 0; i < auc_cnts; i++) {
-			avalon4_pkg_init(&sendpkg, AVA4_P_FINISH, 1, 1);
-			avalon4_pkg_send(hauc[i], &sendpkg, 0);
+			for (j = 0; j < AVA4_DEFAULT_MODULARS; j++) {
+				avalon4_pkg_init(&sendpkg, AVA4_P_FINISH, 1, 1);
+				avalon4_pkg_send(hauc[i], &sendpkg, j);
+				if(k == 5) {
+					k = 0;
+					adjust_fan(temperature, hauc[i], &revpkg, j);
+				}
+			}
 		}
+		k++;
 		sleep(2);
 	}
 

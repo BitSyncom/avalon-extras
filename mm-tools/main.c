@@ -6,6 +6,7 @@
  * By Mikeqin, 2014
  */
 #include "stdio.h"
+#include "stdlib.h"
 #include "getopt.h"
 #include "api.h"
 
@@ -22,7 +23,7 @@ static void help(void)
 static struct option opts[] = {
 	{ "help", 0, 0, 'h' },
 	{ "coretest", 0, 0, 'c' },
-	{ "radiator", 0, 0, 'r' },
+	{ "radiator", 1, 0, 'r' },
 	{ 0, 0, 0, 0 }
 };
 
@@ -30,7 +31,9 @@ int main(int argc, char **argv)
 {
 	int c, option_index = 0;
 	uint16_t freq[3], voltage = 200;
-	c = getopt_long(argc, argv, "hcr", opts, &option_index);
+	int temperature = 42;
+
+	c = getopt_long(argc, argv, "hcr:", opts, &option_index);
 	switch (c) {
 		case 'h':
 			help();
@@ -41,7 +44,9 @@ int main(int argc, char **argv)
 			break;
 		case 'r':
 			printf("Enter radiator mode\r\n");
-			set_radiator_mode();
+			temperature = atoi(optarg);
+			printf("Set the temperature to %d°C\r\n", temperature);
+			set_radiator_mode(temperature);
 			break;
 		default:
 			printf("Enter mboot mode\r\n");
