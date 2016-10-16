@@ -25,8 +25,8 @@ static struct option opts[] = {
 	{ "help", 0, 0, 'h' },
 	{ "coretest", 0, 0, 'c' },
 	{ "radiator", 0, 0, 'r' },
-    { "file", 1, 0, 'f' },
-    { "reboot", 0, 0, 'R' },
+	{ "file", 1, 0, 'f' },
+	{ "reboot", 0, 0, 'R' },
 	{ 0, 0, 0, 0 }
 };
 
@@ -34,9 +34,9 @@ int main(int argc, char **argv)
 {
 	int c, option_index = 0;
 	uint16_t freq[3], voltage = 200;
-    char *filepath = NULL;
+	char *filepath = NULL;
 
-    c = getopt_long(argc, argv, "hcrf:R", opts, &option_index);
+	c = getopt_long(argc, argv, "hcrf:R", opts, &option_index);
 	switch (c) {
         case 'f':
             filepath = optarg;
