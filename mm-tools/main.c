@@ -12,12 +12,12 @@
 static void help(void)
 {
 	printf("Usage: mm-tools [options] ...\n"
-	       "  -h --help\t\t\tPrint this help message\n"
-	       "  -c --coretest\t\t\tEnter coretest function\n"
-	       "  -r --radiator\t\t\tEnter radiator mode\n"
-           "  -f --file\t\t\tSpecifies the upgrade file\n"
-           "  -R --reboot\t\t\tReboot devices\n"
-	       " <run without options will enter the basic function>\n\n"
+		"  -h --help\t\t\tPrint this help message\n"
+		"  -c --coretest\t\t\tEnter coretest function\n"
+		"  -r --radiator\t\t\tEnter radiator mode\n"
+		"  -f --file\t\t\tSpecifies the upgrade file\n"
+		"  -R --reboot\t\t\tReboot devices\n"
+		" <run without options will enter the basic function>\n\n"
 		);
 }
 
@@ -54,13 +54,13 @@ int main(int argc, char **argv)
 			printf("Enter radiator mode\r\n");
 			set_radiator_mode();
 			break;
-        case 'R':
-            printf("Rebooting devices\r\n");
-            mreboot();
-            break;
+		case 'R':
+			printf("Rebooting devices\r\n");
+			mreboot();
+			break;
 		default:
 			printf("Enter mboot mode\r\n");
-            mboot(filepath);
+			mboot(filepath);
 			break;
 	}
 
