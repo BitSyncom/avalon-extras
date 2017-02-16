@@ -8,8 +8,8 @@
 #
 # ----- Customer ----------------------------------------------------------
 BATCHFILE	:= $(shell mktemp)
-HARDWARE_NAME	= MM721
-HARDWARE_NAME_2 = MM741
+HARDWARE_NAME = MM721
+HARDWARE_NAME_741 = MM741
 
 isedir  ?= /home/Xilinx/14.6/ISE_DS
 xil_env ?= . $(isedir)/settings$(shell getconf LONG_BIT).sh &>/dev/null
@@ -39,7 +39,7 @@ reflash: $(HARDWARE_NAME).mcs
 	/bin/bash -c '$(xil_env) && impact -batch $(BATCHFILE)'
 	@rm -f $(BATCHFILE)
 
-reflash_2: $(HARDWARE_NAME_2).mcs
+reflash_741: $(HARDWARE_NAME_741).mcs
 	echo setmode -bs	>> $(BATCHFILE)
 	echo setcable -p auto	>> $(BATCHFILE)
 	echo identify		>> $(BATCHFILE)
@@ -73,7 +73,7 @@ erase:
 reflash_ulink2: pmu721.axf erase_ulink2
 	(while ! (sleep 0.5 && $(LPCXPRESSODIR)/crt_emu_cm_redlink -flash-load-exec $< $(NXP_PARAMETERS)); do : ; done;)
 
-reflash_ulink2_2: pmu741.axf erase_ulink2
+reflash_ulink2_741: pmu741.axf erase_ulink2
 	(while ! (sleep 0.5 && $(LPCXPRESSODIR)/crt_emu_cm_redlink -flash-load-exec $< $(NXP_PARAMETERS)); do : ; done;)
 
 erase_ulink2:
