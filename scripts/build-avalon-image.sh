@@ -1,6 +1,7 @@
 #!/bin/bash
 # This is a script for build avalon controller image
 #
+#  Copyright 2017-2020 Yangjun <yangjun@canaan-creative.com>
 #  Copyright 2014-2016 Mikeqin <Fengling.Qin@gmail.com>
 #  Copyright 2012-2015 Xiangfu <xiangfu@openmobilefree.com>
 #
@@ -13,13 +14,13 @@
 # Learn bash: http://explainshell.com/
 set -e
 
-SCRIPT_VERSION=20160708
+SCRIPT_VERSION=20170214
 
 # Support machine: avalon6, avalon4, abc, avalon7
-[ -z "${AVA_MACHINE}" ] && AVA_MACHINE=avalon6
+[ -z "${AVA_MACHINE}" ] && AVA_MACHINE=avalon7
 
-# Support target board: rpi3-modelb, rpi2-modelb, rpi1-modelb, tl-wr703n-v1, tl-mr3020-v1, wrt1200ac, zedboard, orangepi-2
-[ -z "${AVA_TARGET_BOARD}" ] && AVA_TARGET_BOARD=rpi3-modelb
+# Support target board: rpi3-modelb, rpi2-modelb, rpi1-modelb, tl-wr703n-v1, tl-mr3020-v1, wrt1200ac, zctrlboard, orangepi-2
+[ -z "${AVA_TARGET_BOARD}" ] && AVA_TARGET_BOARD=zctrlboard
 
 # OpenWrt repo
 avalon4_owrepo="svn://svn.openwrt.org/openwrt/trunk@43076"
@@ -37,7 +38,7 @@ rpi1_modelb_brdcfg=("brcm2708" "config.${AVA_MACHINE}.raspberry-pi")
 tl_wr703n_v1_brdcfg=("ar71xx" "config.${AVA_MACHINE}.703n")
 tl_mr3020_v1_brdcfg=("ar71xx" "config.${AVA_MACHINE}.mr3020")
 wrt1200ac_brdcfg=("mvebu" "config.${AVA_MACHINE}.wrt1200ac")
-zedboard_brdcfg=("zynq" "config.${AVA_MACHINE}.zedboard")
+zctrlboard_brdcfg=("zynq" "config.${AVA_MACHINE}.zctrlboard")
 orangepi_2_brdcfg=("sunxi" "config.${AVA_MACHINE}.orangepi2")
 
 which wget > /dev/null && DL_PROG=wget && DL_PARA="-nv -O"
@@ -75,7 +76,23 @@ EOL
 
 prepare_config() {
     cd ${OPENWRT_DIR}
+
+    if [ "${AVA_TARGET_BOARD}" == "zctrlboard" ]; then
+        wget https://raw.githubusercontent.com/Canaan-Creative/Avalon-extras/master/zctrl-miscs/kernel_config -O ./target/linux/zynq/config-4.4
+    fi
+
     eval OPENWRT_CONFIG=\${"`echo ${AVA_TARGET_BOARD//-/_}`"_brdcfg[1]} && cp ./feeds/cgminer/cgminer/data/${OPENWRT_CONFIG} .config
+}
+
+prepare_patch() {
+    cd ${OPENWRT_DIR}
+
+    if [ "${AVA_TARGET_BOARD}" == "zctrlboard" ]; then
+        wget https://raw.githubusercontent.com/Canaan-Creative/Avalon-extras/master/zctrl-miscs/patches/u-boot/030-update-dts-for-zctrl.patch -O ./package/boot/uboot-zynq/patches/030-update-dts-for-zctrl.patch
+        wget https://raw.githubusercontent.com/Canaan-Creative/Avalon-extras/master/zctrl-miscs/patches/u-boot/031-update-ddr-for-zctrl.patch -O ./package/boot/uboot-zynq/patches/031-update-ddr-for-zctrl.patch
+        wget https://raw.githubusercontent.com/Canaan-Creative/Avalon-extras/master/zctrl-miscs/patches/linux/120-update-dts-for-zctrl.patch -O ./target/linux/zynq/patches/120-update-dts-for-zctrl.patch
+
+    fi
 }
 
 prepare_feeds() {
@@ -174,14 +191,16 @@ Usage: $0 [--version] [--help] [--build] [--cgminer] [--cleanup]
      AVA_TARGET_BOARD   Environment variable, available target:
                         tl-wr703n-v1, pi-modelb-v1
                         pi-modelb-v2, tl-mr3020-v1
-                        use pi-modelb-v2 if unset
+                        zctrlboard
+                        use zctrlboard if unset
 
      AVA_MACHINE        Environment variable, available machine:
                         avalon6, avalon4
-                        use avalon6 if unset
+                        use avalon7 if unset
 
 Written by: Xiangfu <xiangfu@openmobilefree.net>
             Fengling <Fengling.Qin@gmail.com>
+            Yangjun <yangjun@canaan-creative.com>
                                                      Version: ${SCRIPT_VERSION}"
  }
 
@@ -198,10 +217,10 @@ do
             exit
             ;;
         --build)
-            prepare_source && prepare_feeds && prepare_config && prepare_version && build_image && do_release
+            prepare_source && prepare_feeds && prepare_patch && prepare_config && prepare_version && build_image && do_release
             ;;
         --cgminer)
-            prepare_source && prepare_feeds && prepare_config && prepare_version && build_cgminer
+            prepare_source && prepare_feeds && prepare_patch && prepare_config && prepare_version && build_cgminer
             ;;
         --cleanup)
             cleanup
