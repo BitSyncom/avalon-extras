@@ -19,7 +19,7 @@ SCRIPT_VERSION=20170214
 # Support machine: avalon6, avalon4, abc, avalon7
 [ -z "${AVA_MACHINE}" ] && AVA_MACHINE=avalon6
 
-# Support target board: rpi3-modelb, rpi2-modelb, rpi1-modelb, tl-wr703n-v1, tl-mr3020-v1, wrt1200ac, zedboard, orangepi-2, zctrlboard
+# Support target board: rpi3-modelb, rpi2-modelb, rpi1-modelb, tl-wr703n-v1, tl-mr3020-v1, wrt1200ac, zedboard, orangepi-2, zctrl
 [ -z "${AVA_TARGET_BOARD}" ] && AVA_TARGET_BOARD=rpi3-modelb
 
 # OpenWrt repo
@@ -39,7 +39,7 @@ tl_wr703n_v1_brdcfg=("ar71xx" "config.${AVA_MACHINE}.703n")
 tl_mr3020_v1_brdcfg=("ar71xx" "config.${AVA_MACHINE}.mr3020")
 wrt1200ac_brdcfg=("mvebu" "config.${AVA_MACHINE}.wrt1200ac")
 zedboard_brdcfg=("zynq" "config.${AVA_MACHINE}.zedboard")
-zctrlboard_brdcfg=("zynq" "config.${AVA_MACHINE}.zctrlboard")
+zctrl_brdcfg=("zynq" "config.${AVA_MACHINE}.zctrl")
 orangepi_2_brdcfg=("sunxi" "config.${AVA_MACHINE}.orangepi2")
 
 which wget > /dev/null && DL_PROG=wget && DL_PARA="-nv -O"
@@ -78,7 +78,7 @@ EOL
 prepare_config() {
     cd ${OPENWRT_DIR}
 
-    if [ "${AVA_TARGET_BOARD}" == "zctrlboard" ]; then
+    if [ "${AVA_TARGET_BOARD}" == "zctrl" ]; then
         wget https://raw.githubusercontent.com/Canaan-Creative/Avalon-extras/master/zctrl-miscs/kernel_config -O ./target/linux/zynq/config-4.4
     fi
 
@@ -88,7 +88,7 @@ prepare_config() {
 prepare_patch() {
     cd ${OPENWRT_DIR}
 
-    if [ "${AVA_TARGET_BOARD}" == "zctrlboard" ]; then
+    if [ "${AVA_TARGET_BOARD}" == "zctrl" ]; then
         wget https://raw.githubusercontent.com/Canaan-Creative/Avalon-extras/master/zctrl-miscs/patches/u-boot/030-update-dts-for-zctrl.patch -O ./package/boot/uboot-zynq/patches/030-update-dts-for-zctrl.patch
         wget https://raw.githubusercontent.com/Canaan-Creative/Avalon-extras/master/zctrl-miscs/patches/u-boot/031-update-ddr-for-zctrl.patch -O ./package/boot/uboot-zynq/patches/031-update-ddr-for-zctrl.patch
         wget https://raw.githubusercontent.com/Canaan-Creative/Avalon-extras/master/zctrl-miscs/patches/linux/120-update-dts-for-zctrl.patch -O ./target/linux/zynq/patches/120-update-dts-for-zctrl.patch
@@ -168,6 +168,23 @@ do_release() {
     eval AVA_TARGET_PLATFORM=\${"`echo ${AVA_TARGET_BOARD//-/_}`"_brdcfg[0]}
     mkdir -p ./bin/${DATE}/${AVA_TARGET_BOARD}/
     cp -a ./openwrt/bin/${AVA_TARGET_PLATFORM}/* ./bin/${DATE}/${AVA_TARGET_BOARD}/
+    if [ "${AVA_TARGET_BOARD}" == "zctrl" ]; then
+	mv ./bin/${DATE}/${AVA_TARGET_BOARD}/uboot-zynq-zed ./bin/${DATE}/${AVA_TARGET_BOARD}/uboot-zynq-zctrl
+	mv ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zed-ext4.img ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zctrl-ext4.img
+	mv ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zed-fit.itb ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zctrl-fit.itb
+	mv ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zed-rootfs.cpio.gz ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zctrl-rootfs.cpio.gz
+	mv ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zed-sdcard-vfat-ext4.img ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zctrl-sdcard-vfat-ext4.img
+	mv ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zed-sdcard-vfat-ext4.img.gz ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zctrl-sdcard-vfat-ext4.img
+	mv ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zed-system.dtb ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zctrl-system.dtb
+	mv ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zed-uImage ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zctrl-uImage
+	mv ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zed-uramdisk.image.gz ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zctrl-uramdisk.image.gz
+	mv ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zed-zImage ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zctrl-zImage
+	mv ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zed-zed-rootfs.tar.gz ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zctrl-zctrl-rootfs.tar.gz
+	rm ./bin/${DATE}/${AVA_TARGET_BOARD}/fit.itb
+	cd ./bin/${DATE}/${AVA_TARGET_BOARD}/
+	ln -s zynq-zctrl-fit.itb fit.itb
+	cd ../../../
+     fi
 }
 
 cleanup() {
@@ -191,7 +208,7 @@ Usage: $0 [--version] [--help] [--build] [--cgminer] [--cleanup]
      AVA_TARGET_BOARD   Environment variable, available target:
                         tl-wr703n-v1, pi-modelb-v1
                         pi-modelb-v2, tl-mr3020-v1
-                        zctrlboard
+                        zctrl
                         use pi-modelb-v2 if unset
 
      AVA_MACHINE        Environment variable, available machine:
