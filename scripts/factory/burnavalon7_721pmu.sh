@@ -1,5 +1,5 @@
 #! /bin/bash
-cd /home/factory/Burn_tool_script
+cd /home/factory/Avalon-extras/scripts/factory
 while true; do
 	make reflash_ulink2 pmu="pmu721"
 echo;

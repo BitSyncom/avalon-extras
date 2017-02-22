@@ -1,5 +1,5 @@
 #! /bin/bash
-cd /home/Burn_tool_script
+cd /home/factory/Avalon-extras/scripts/factory
 while true; do 
         make isedir=/home/factory/Xilinx/14.6/ISE_DS reflash HARDWARE_NAME="MM721";
 echo;
