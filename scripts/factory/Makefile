@@ -32,11 +32,11 @@ reflash: $(HARDWARE_NAME).mcs
 	echo setmode -bs	>> $(BATCHFILE)
 	echo setcable -p auto	>> $(BATCHFILE)
 	echo identify		>> $(BATCHFILE)
-	ifeq ($(HARDWARE_NAME,MM721))
+ifeq ($(HARDWARE_NAME),MM721)
 		echo attachFlash -p 1 -spi W25Q80BV	        >> $(BATCHFILE)
-	else 
+else 
 		echo attachFlash -p 1 -spi W25Q16BV             >> $(BATCHFILE)
-	endif
+endif
 	echo assignfiletoattachedflash -p 1 -file $<	>> $(BATCHFILE)
 	echo program -p 1 -dataWidth 4 -spionly -erase -loadfpga >> $(BATCHFILE)
 	echo exit		>> $(BATCHFILE)
