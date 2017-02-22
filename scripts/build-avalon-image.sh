@@ -60,9 +60,9 @@ OPENWRT_DIR=${ROOT_DIR}/openwrt
 prepare_version() {
     cd ${OPENWRT_DIR}
     if [ "${AVA_MACHINE}" == "avalon7" ]; then
-	GIT_VERSION=`git ls-remote https://github.com/Canaan-Creative/cgminer master | cut -f1 | cut -c1-7`
+        GIT_VERSION=`git ls-remote https://github.com/Canaan-Creative/cgminer master | cut -f1 | cut -c1-7`
     else
-	GIT_VERSION=`git ls-remote https://github.com/Canaan-Creative/cgminer avalon4 | cut -f1 | cut -c1-7`
+        GIT_VERSION=`git ls-remote https://github.com/Canaan-Creative/cgminer avalon4 | cut -f1 | cut -c1-7`
     fi
     LUCI_GIT_VERSION=`git --git-dir=./feeds/luci/.git rev-parse HEAD | cut -c1-7`
     OW_GIT_VERSION=`git --git-dir=./feeds/cgminer/.git rev-parse HEAD | cut -c1-7`
@@ -79,7 +79,7 @@ prepare_config() {
     cd ${OPENWRT_DIR}
 
     if [ "${AVA_TARGET_BOARD}" == "zctrl" ]; then
-        wget https://raw.githubusercontent.com/Canaan-Creative/Avalon-extras/master/zctrl-miscs/kernel_config -O ./target/linux/zynq/config-4.4
+        wget https://raw.githubusercontent.com/Canaan-Creative/Avalon-extras/master/zctrl-miscs/patches/linux/zynq/config-4.4 -O ./target/linux/zynq/config-4.4
     fi
 
     eval OPENWRT_CONFIG=\${"`echo ${AVA_TARGET_BOARD//-/_}`"_brdcfg[1]} && cp ./feeds/cgminer/cgminer/data/${OPENWRT_CONFIG} .config
@@ -89,9 +89,17 @@ prepare_patch() {
     cd ${OPENWRT_DIR}
 
     if [ "${AVA_TARGET_BOARD}" == "zctrl" ]; then
-        wget https://raw.githubusercontent.com/Canaan-Creative/Avalon-extras/master/zctrl-miscs/patches/u-boot/030-update-dts-for-zctrl.patch -O ./package/boot/uboot-zynq/patches/030-update-dts-for-zctrl.patch
+	# Patch U-Boot
+        wget https://raw.githubusercontent.com/Canaan-Creative/Avalon-extras/master/zctrl-miscs/patches/u-boot/Makefile -O ./package/boot/uboot-zynq/Makefile
+        wget https://raw.githubusercontent.com/Canaan-Creative/Avalon-extras/master/zctrl-miscs/patches/u-boot/001-use-dtc-in-kernel.patch -O ./package/boot/uboot-zynq/patches/001-use-dtc-in-kernel.patch
+        wget https://raw.githubusercontent.com/Canaan-Creative/Avalon-extras/master/zctrl-miscs/patches/u-boot/030-add-dts-for-zctrl.patch -O ./package/boot/uboot-zynq/patches/030-add-dts-for-zctrl.patch
         wget https://raw.githubusercontent.com/Canaan-Creative/Avalon-extras/master/zctrl-miscs/patches/u-boot/031-update-ddr-for-zctrl.patch -O ./package/boot/uboot-zynq/patches/031-update-ddr-for-zctrl.patch
-        wget https://raw.githubusercontent.com/Canaan-Creative/Avalon-extras/master/zctrl-miscs/patches/linux/120-update-dts-for-zctrl.patch -O ./target/linux/zynq/patches/120-update-dts-for-zctrl.patch
+        wget https://raw.githubusercontent.com/Canaan-Creative/Avalon-extras/master/zctrl-miscs/patches/u-boot/032-add-defconfig-for-zctrl.patch -O ./package/boot/uboot-zynq/patches/032-add-defconfig-for-zctrl.patch
+
+	# Patch Linux
+        wget https://raw.githubusercontent.com/Canaan-Creative/Avalon-extras/master/zctrl-miscs/patches/linux/zynq/image/Makefile -O ./target/linux/zynq/image/Makefile
+        wget https://raw.githubusercontent.com/Canaan-Creative/Avalon-extras/master/zctrl-miscs/patches/linux/zynq/patches/120-add-dts-for-zctrl.patch -O ./target/linux/zynq/patches/120-add-dts-for-zctrl.patch
+        wget https://raw.githubusercontent.com/Canaan-Creative/Avalon-extras/master/zctrl-miscs/patches/linux/zynq/profiles/zctrl.mk -O ./target/linux/zynq/profiles/zctrl.mk
     fi
 }
 
@@ -168,23 +176,6 @@ do_release() {
     eval AVA_TARGET_PLATFORM=\${"`echo ${AVA_TARGET_BOARD//-/_}`"_brdcfg[0]}
     mkdir -p ./bin/${DATE}/${AVA_TARGET_BOARD}/
     cp -a ./openwrt/bin/${AVA_TARGET_PLATFORM}/* ./bin/${DATE}/${AVA_TARGET_BOARD}/
-    if [ "${AVA_TARGET_BOARD}" == "zctrl" ]; then
-	mv ./bin/${DATE}/${AVA_TARGET_BOARD}/uboot-zynq-zed ./bin/${DATE}/${AVA_TARGET_BOARD}/uboot-zynq-zctrl
-	mv ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zed-ext4.img ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zctrl-ext4.img
-	mv ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zed-fit.itb ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zctrl-fit.itb
-	mv ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zed-rootfs.cpio.gz ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zctrl-rootfs.cpio.gz
-	mv ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zed-sdcard-vfat-ext4.img ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zctrl-sdcard-vfat-ext4.img
-	mv ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zed-sdcard-vfat-ext4.img.gz ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zctrl-sdcard-vfat-ext4.img
-	mv ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zed-system.dtb ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zctrl-system.dtb
-	mv ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zed-uImage ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zctrl-uImage
-	mv ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zed-uramdisk.image.gz ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zctrl-uramdisk.image.gz
-	mv ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zed-zImage ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zctrl-zImage
-	mv ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zed-zed-rootfs.tar.gz ./bin/${DATE}/${AVA_TARGET_BOARD}/zynq-zctrl-zctrl-rootfs.tar.gz
-	rm ./bin/${DATE}/${AVA_TARGET_BOARD}/fit.itb
-	cd ./bin/${DATE}/${AVA_TARGET_BOARD}/
-	ln -s zynq-zctrl-fit.itb fit.itb
-	cd ../../../
-     fi
 }
 
 cleanup() {
@@ -248,3 +239,5 @@ do
             ;;
     esac
 done
+
+# vim: set ts=4 sw=4 et
