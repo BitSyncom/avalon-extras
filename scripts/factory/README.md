@@ -5,7 +5,9 @@
 - testavalon7_pmu      test pmu
 
 # Notes:
-========
-- Default login user is factory
+
+- The default login user is factory
 - when burn 721pmu firmware,rename pmu.axf to pmu721.axf
+- Download this repository to factory home directory
+- Xilinx is installed by default to the user's home directory
 
