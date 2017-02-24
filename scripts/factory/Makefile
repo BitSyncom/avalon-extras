@@ -33,9 +33,9 @@ reflash: $(PLATFORM).mcs
 	echo setcable -p auto	>> $(BATCHFILE)
 	echo identify		>> $(BATCHFILE)
 ifeq ($(PLATFORM),MM721)
-		echo attachFlash -p 1 -spi W25Q80BV	        >> $(BATCHFILE)
+	echo attachFlash -p 1 -spi W25Q80BV	        >> $(BATCHFILE)
 else 
-		echo attachFlash -p 1 -spi W25Q16BV             >> $(BATCHFILE)
+	echo attachFlash -p 1 -spi W25Q16BV             >> $(BATCHFILE)
 endif
 	echo assignfiletoattachedflash -p 1 -file $<	>> $(BATCHFILE)
 	echo program -p 1 -dataWidth 4 -spionly -erase -loadfpga >> $(BATCHFILE)
@@ -53,11 +53,15 @@ load: $(PLATFORM).bit
 	/bin/bash -c '$(xil_env) && impact -batch $(BATCHFILE)'
 	@rm -f $(BATCHFILE)
 
-erase:
+erase: $(PLATFORM)
 	echo setmode -bs	>> $(BATCHFILE)
 	echo setcable -p auto	>> $(BATCHFILE)
 	echo identify		>> $(BATCHFILE)
+ifeq ($(PLATFORM),MM721)
 	echo attachFlash -p 1 -spi W25Q80BV		>> $(BATCHFILE)
+else
+	echo attachFlash -p 1 -spi W25Q16BV
+endif
 	echo erase -p 1 -o -spionly			>> $(BATCHFILE)
 	echo exit		>> $(BATCHFILE)
 	/bin/bash -c '$(xil_env) && impact -batch $(BATCHFILE)'
