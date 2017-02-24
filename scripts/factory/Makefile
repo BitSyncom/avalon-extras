@@ -28,11 +28,11 @@ download:
 
 # Bitstream rules
 # TODO: how to setCable -baud 12000000
-reflash: $(HARDWARE_NAME).mcs
+reflash: $(PLATFORM).mcs
 	echo setmode -bs	>> $(BATCHFILE)
 	echo setcable -p auto	>> $(BATCHFILE)
 	echo identify		>> $(BATCHFILE)
-ifeq ($(HARDWARE_NAME),MM721)
+ifeq ($(PLATFORM),MM721)
 		echo attachFlash -p 1 -spi W25Q80BV	        >> $(BATCHFILE)
 else 
 		echo attachFlash -p 1 -spi W25Q16BV             >> $(BATCHFILE)
@@ -43,7 +43,7 @@ endif
 	/bin/bash -c '$(xil_env) && impact -batch $(BATCHFILE)'
 	@rm -f $(BATCHFILE)
 
-load: $(HARDWARE_NAME).bit
+load: $(PLATFORM).bit
 	echo setmode -bs	>> $(BATCHFILE)
 	echo setcable -p auto	>> $(BATCHFILE)
 	echo identify		>> $(BATCHFILE)
@@ -63,7 +63,7 @@ erase:
 	/bin/bash -c '$(xil_env) && impact -batch $(BATCHFILE)'
 	@rm -f $(BATCHFILE)
 
-reflash_ulink2: $(pmu).axf erase_ulink2
+reflash_ulink2: $(PMU).axf erase_ulink2
 	(while ! (sleep 0.5 && $(LPCXPRESSODIR)/crt_emu_cm_redlink -flash-load-exec $< $(NXP_PARAMETERS)); do : ; done;)
 
 erase_ulink2:
