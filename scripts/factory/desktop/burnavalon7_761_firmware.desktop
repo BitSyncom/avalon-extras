@@ -5,5 +5,5 @@ Type=Application
 Terminal=false
 Icon[en_US]=gnome-panel-launcher
 Exec=gnome-terminal -e '/home/factory/Avalon-extras/scripts/factory/burn-761firmware.sh 761'
-Name[en_US]=BurnAvalon7_721mm
+Name[en_US]=BurnAvalon7_761firmware
 Icon=gnome-panel-launcher
