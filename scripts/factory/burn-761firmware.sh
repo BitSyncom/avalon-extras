@@ -1,18 +1,14 @@
 #!/bin/bash
 cd /home/factory/Avalon-extras/scripts/factory
-while true; do
-	make reflash_ulink2 PMU=$1
-echo;
+while true;do
 <<<<<<< HEAD
-for i in $*;do
-if [ $i = noloop ];then
-break
-fi
-done
+	./burn-pmu.sh mcu noloop;
+	./burn-mm.sh MM761 noloop;
 =======
-if [ "$2" != "" ];then
-break
-fi
+	./burn-pmu.sh mcu $1;
+	./burn-mm.sh MM761 $1;
 >>>>>>> 41d7058b7f8fecde1d45e4562a769344bb066e16
+echo;
 read -p "Press any key to burn next"
 done
+	

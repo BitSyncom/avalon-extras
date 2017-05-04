@@ -1,0 +1,13 @@
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Version=1.0
+Type=Application
+Terminal=false
+Icon[en_US]=gnome-panel-launcher
+<<<<<<< HEAD
+Exec=gnome-terminal -e '/home/factory/Avalon-extras/scripts/factory/burn-761firmware.sh'
+=======
+Exec=gnome-terminal -e '/home/factory/Avalon-extras/scripts/factory/burn-761firmware.sh 761'
+>>>>>>> 41d7058b7f8fecde1d45e4562a769344bb066e16
+Name[en_US]=BurnAvalon7_761firmware
+Icon=gnome-panel-launcher
