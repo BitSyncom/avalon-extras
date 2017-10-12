@@ -12,7 +12,14 @@ parser.add_option("-s", "--serial", dest="serial_port", default="/dev/ttyUSB0", 
 parser.add_option("-c", "--choose", dest="is_rig", default="0", help="0 Is For Rig Testing")
 (options, args) = parser.parse_args()
 
-ser = Serial(options.serial_port, 115200, 8, timeout=0.2) # 1 second
+try:
+    ser = Serial(options.serial_port, 115200, 8, timeout=0.2) # 1 second
+except serial.serialutil.SerialException:
+    options.serial_port="/dev/ttyUSB1"
+except serial.serialutil.SerialException:
+    options.serial_port="/dev/ttyUSB2"
+finally:
+    ser = Serial(options.serial_port, 115200, 8, timeout=0.2)
 
 PMU721_TYPE = ( 'PMU721' )
 PMU741_TYPE = ( 'PMU741' )
