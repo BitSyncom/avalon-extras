@@ -33,6 +33,7 @@ import binascii
 import usb.core
 import usb.util
 import sys
+import traceback
 
 auc_vid = 0x29f1
 auc_pid = 0x33f2
@@ -330,6 +331,6 @@ if __name__ == '__main__':
                     idx_index = 1
                     raw_input("Please enter any key to continue")
         except:
-            print("sorry!")
+            print 'traceback.print_exc():'; traceback.print_exc()
             raw_input("Press any key to exit!")
             sys.exit(1)
