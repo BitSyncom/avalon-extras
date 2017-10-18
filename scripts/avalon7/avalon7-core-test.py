@@ -35,6 +35,7 @@ import usb.util
 import sys
 import traceback
 
+
 auc_vid = 0x29f1
 auc_pid = 0x33f2
 TYPE_TEST = "32"
